@@ -1,0 +1,19 @@
+<?php
+$string['pluginname'] = 'Feedback con IA';
+$string['ollama_url'] = 'URL de Ollama';
+$string['ollama_url_desc'] = 'URL del servidor Ollama (ejemplo: http://localhost:11434)';
+$string['ollama_model'] = 'Modelo de Ollama';
+$string['ollama_model_desc'] = 'Nombre del modelo a utilizar (ejemplo: llama3.2)';
+$string['timeout'] = 'Timeout (segundos)';
+$string['timeout_desc'] = 'Tiempo máximo de espera para la respuesta de Ollama';
+$string['default'] = 'Habilitado por defecto';
+$string['default_help'] = 'Si está activado, este método de feedback estará habilitado por defecto para todas las tareas nuevas';
+$string['generate_feedback'] = 'Evaluar práctica con IA';
+$string['aifeedback'] = 'Feedback generado por IA';
+$string['no_prompt_found'] = 'No se encontró un prompt configurado para esta tarea';
+$string['no_submission'] = 'El estudiante no ha enviado ninguna entrega';
+$string['no_pdf_found'] = 'No se encontró ningún archivo PDF en la entrega del estudiante';
+$string['ollama_error'] = 'Error al comunicarse con Ollama. Verifique la configuración.';
+$string['privacy:metadata'] = 'El plugin de feedback con IA no almacena datos personales.';
+$string['enabled'] = 'Feedback con IA';
+$string['enabled_help'] = 'Si está habilitado, los profesores podrán generar feedback automático usando IA.';
