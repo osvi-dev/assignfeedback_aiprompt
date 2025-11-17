@@ -1,10 +1,10 @@
 <?php
 $string['pluginname'] = 'Feedback con IA';
-$string['ollama_url'] = 'URL de Ollama';
+$string['ollama_url'] = 'http://localhost:11434';
 $string['ollama_url_desc'] = 'URL del servidor Ollama (ejemplo: http://localhost:11434)';
-$string['ollama_model'] = 'Modelo de Ollama';
+$string['ollama_model'] = 'deepseek-r1:7b';
 $string['ollama_model_desc'] = 'Nombre del modelo a utilizar (ejemplo: llama3.2)';
-$string['timeout'] = 'Timeout (segundos)';
+$string['timeout'] = '200';
 $string['timeout_desc'] = 'Tiempo máximo de espera para la respuesta de Ollama';
 $string['default'] = 'Habilitado por defecto';
 $string['default_help'] = 'Si está activado, este método de feedback estará habilitado por defecto para todas las tareas nuevas';

@@ -23,6 +23,9 @@ class ollama_client {
      * @return string|false La respuesta de Ollama o false en caso de error
      */
     public function generate_feedback($prompt, $context = '') {
+        global $PAGE;
+
+        
         $url = rtrim($this->url, '/') . '/api/generate';
         
         $full_prompt = $prompt;
@@ -36,6 +39,10 @@ class ollama_client {
             'stream' => false
         ];
         
+        $PAGE->requires->js_init_code("
+            console.log('DATA:', " . json_encode($data) . ");
+        "); 
+
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);

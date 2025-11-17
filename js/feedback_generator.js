@@ -1,8 +1,6 @@
 (function() {
     'use strict';
     
-    console.log('🎉 Plugin cargado');
-    
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
@@ -22,15 +20,97 @@
         button.addEventListener('click', function(e) {
             e.preventDefault();
             
-            console.log('👋 ¡BOTÓN PRESIONADO!');
-            console.log('AssignID:', this.getAttribute('data-assignid'));
-            console.log('UserID:', this.getAttribute('data-userid'));
+            var assignid = this.getAttribute('data-assignid');
+            var userid = this.getAttribute('data-userid');
+            var gradeid = this.getAttribute('data-gradeid') || 0;
+            
+            console.log('📝 Generando feedback con IA...');
+            console.log('AssignID:', assignid);
+            console.log('UserID:', userid);
+            console.log('GradeID:', gradeid);
+            
+            // Desactivar botón
+            button.disabled = true;
+            button.style.opacity = '0.6';
+            button.style.cursor = 'not-allowed';
             
             var status = document.getElementById('ai_feedback_status');
-            status.innerHTML = '<span style="color: green;">✅ Botón funciona!</span>';
-            
             var textarea = document.getElementById('id_assignfeedbackaiprompt');
-            textarea.value = '¡Hola! El botón está funcionando correctamente.';
+            
+            status.innerHTML = '<span style="color: blue;"><i class="fa fa-spinner fa-spin"></i> Generando feedback con IA, por favor espere...</span>';
+            textarea.value = 'Procesando...';
+            
+            // Construir URL para la petición AJAX
+            var ajaxUrl = M.cfg.wwwroot + '/mod/assign/feedback/aiprompt/ajax_generate_feedback.php';
+            
+            // Hacer petición AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', ajaxUrl, true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            
+            xhr.onload = function() {
+                // Reactivar botón
+                button.disabled = false;
+                button.style.opacity = '1';
+                button.style.cursor = 'pointer';
+                
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        
+                        if (response.success) {
+                            status.innerHTML = '<span style="color: green;"><i class="fa fa-check"></i> ¡Feedback generado exitosamente!</span>';
+                            textarea.value = response.feedback;
+                            console.log('✅ Feedback generado correctamente');
+                        } else {
+                            status.innerHTML = '<span style="color: red;"><i class="fa fa-times"></i> Error: ' + response.error + '</span>';
+                            textarea.value = '';
+                            console.error('❌ Error:', response.error);
+                        }
+                    } catch (e) {
+                        status.innerHTML = '<span style="color: red;"><i class="fa fa-times"></i> Error al procesar la respuesta</span>';
+                        textarea.value = '';
+                        console.error('❌ Error al parsear JSON:', e);
+                    }
+                } else {
+                    status.innerHTML = '<span style="color: red;"><i class="fa fa-times"></i> Error de conexión (HTTP ' + xhr.status + ')</span>';
+                    textarea.value = '';
+                    console.error('❌ Error HTTP:', xhr.status);
+                }
+            };
+            
+            xhr.onerror = function() {
+                // Reactivar botón
+                button.disabled = false;
+                button.style.opacity = '1';
+                button.style.cursor = 'pointer';
+                
+                status.innerHTML = '<span style="color: red;"><i class="fa fa-times"></i> Error de red. Verifique su conexión.</span>';
+                textarea.value = '';
+                console.error('❌ Error de red');
+            };
+            
+            xhr.ontimeout = function() {
+                // Reactivar botón
+                button.disabled = false;
+                button.style.opacity = '1';
+                button.style.cursor = 'pointer';
+                
+                status.innerHTML = '<span style="color: red;"><i class="fa fa-times"></i> Timeout. La IA tardó demasiado en responder.</span>';
+                textarea.value = '';
+                console.error('❌ Timeout');
+            };
+            
+            // Timeout de 150 segundos (150000 ms) - más que el timeout de Ollama
+            xhr.timeout = 150000;
+            
+            // Enviar petición
+            var params = 'assignid=' + encodeURIComponent(assignid) + 
+                        '&userid=' + encodeURIComponent(userid) + 
+                        '&gradeid=' + encodeURIComponent(gradeid) +
+                        '&sesskey=' + encodeURIComponent(M.cfg.sesskey);
+            
+            xhr.send(params);
         });
     }
 })();
