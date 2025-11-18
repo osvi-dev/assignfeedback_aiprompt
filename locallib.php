@@ -40,6 +40,7 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
         $aifeedback = '';
         if ($grade && $grade->id) {
             $record = $DB->get_record('assignfeedback_aiprompt', [
+                'assignment' => $assignid,
                 'userid' => $userid
             ]);
             if ($record) {
@@ -104,10 +105,14 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
         $record = new stdClass();
         $record->assignment = $this->assignment->get_instance()->id;
         $record->aifeedback = $feedbacktext;
+        $record->userid = $grade->userid;
         $record->isedited = 1; // Marcado como editado ya que el profesor lo está guardando
         $record->timemodified = time();
         
-        $existing = $DB->get_record('assignfeedback_aiprompt', ['assignment' => $record->assignment]);
+        $existing = $DB->get_record('assignfeedback_aiprompt', [
+            'assignment' => $record->assignment,
+            'userid' => $record->userid
+        ]);
         
         if ($existing) {
             $record->id = $existing->id;

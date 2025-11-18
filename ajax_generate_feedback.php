@@ -107,7 +107,11 @@ try {
     $record->timemodified = time();
     
     // Verificar si ya existe un registro
-    $existing = $DB->get_record('assignfeedback_aiprompt', ['assignment' => $assignid]);
+    $existing = $DB->get_record('assignfeedback_aiprompt', [
+        'assignment' => $assignid,
+        'userid' => $userid
+    ]);
+
     if ($existing) {
         $record->id = $existing->id;
         $DB->update_record('assignfeedback_aiprompt', $record);
