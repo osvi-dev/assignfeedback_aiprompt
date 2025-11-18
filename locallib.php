@@ -15,8 +15,15 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
     public function get_form_elements($grade, MoodleQuickForm $mform, stdClass $data) {
         global $DB, $PAGE;
         
+        // ID de la tarea
         $assignid = $this->assignment->get_instance()->id;
+        // ID del usuario
         $userid = $grade ? $grade->userid : 0;
+        
+        $PAGE->requires->js_init_code("
+            console.log('El user ID es:', " . $userid . ");
+            console.log('El assignid es: ', " . $assignid . ");
+        ");
 
         // Obtener el prompt de la tarea
         $promptdata = $DB->get_record('local_prompt_tarea', ["assignid" => $assignid]);
@@ -33,7 +40,7 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
         $aifeedback = '';
         if ($grade && $grade->id) {
             $record = $DB->get_record('assignfeedback_aiprompt', [
-                'assignment' => $assignid
+                'userid' => $userid
             ]);
             if ($record) {
                 $aifeedback = $record->aifeedback;
@@ -50,8 +57,7 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
             'class' => 'btn btn-primary',
             'id' => 'id_generate_ai_feedback',
             'data-assignid' => $assignid,
-            'data-userid' => $userid,
-            'data-gradeid' => $grade ? $grade->id : 0
+            'data-userid' => $userid
         ];
         
         $mform->addElement('html', 
@@ -86,7 +92,7 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
     /**
      * Guarda el feedback
      */
-    public function save(stdClass $grade, stdClass $data) {
+    public function save(stdClass $grade, stdClass $data): bool {
         global $DB;
         
         $feedbacktext = isset($data->assignfeedbackaiprompt) ? $data->assignfeedbackaiprompt : '';

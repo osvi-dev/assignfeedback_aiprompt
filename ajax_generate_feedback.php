@@ -9,7 +9,6 @@ require_login();
 
 $assignid = required_param('assignid', PARAM_INT);
 $userid = required_param('userid', PARAM_INT);
-$gradeid = optional_param('gradeid', 0, PARAM_INT);
 
 header('Content-Type: application/json');
 
@@ -26,6 +25,7 @@ try {
     }
     
     $prompt = $promptdata->prompt;
+    $prompt = 'Quiero me que saludes de manera calida';
     
     // Obtener la tarea y el contexto del estudiante
     list($course, $cm) = get_course_and_cm_from_instance($assignid, 'assign');
@@ -101,6 +101,7 @@ try {
     $record = new stdClass();
     $record->assignment = $assignid;
     $record->aifeedback = $feedback;
+    $record->userid = $userid;
     $record->isedited = 0;
     $record->timecreated = time();
     $record->timemodified = time();

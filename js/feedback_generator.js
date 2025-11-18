@@ -22,13 +22,11 @@
             
             var assignid = this.getAttribute('data-assignid');
             var userid = this.getAttribute('data-userid');
-            var gradeid = this.getAttribute('data-gradeid') || 0;
-            
+
             console.log('📝 Generando feedback con IA...');
             console.log('AssignID:', assignid);
             console.log('UserID:', userid);
-            console.log('GradeID:', gradeid);
-            
+
             // Desactivar botón
             button.disabled = true;
             button.style.opacity = '0.6';
@@ -107,7 +105,6 @@
             // Enviar petición
             var params = 'assignid=' + encodeURIComponent(assignid) + 
                         '&userid=' + encodeURIComponent(userid) + 
-                        '&gradeid=' + encodeURIComponent(gradeid) +
                         '&sesskey=' + encodeURIComponent(M.cfg.sesskey);
             
             xhr.send(params);
