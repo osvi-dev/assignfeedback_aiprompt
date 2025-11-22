@@ -25,7 +25,6 @@ try {
     }
     
     $prompt = $promptdata->prompt;
-    $prompt = 'Quiero me que saludes de manera calida';
     
     // Obtener la tarea y el contexto del estudiante
     list($course, $cm) = get_course_and_cm_from_instance($assignid, 'assign');
@@ -50,30 +49,30 @@ try {
     $fs = get_file_storage();
     $files = $fs->get_area_files($context->id, 'assignsubmission_file', 'submission_files', $submission->id, 'timemodified', false);
     
-    $pdfcontent = 'Hola';
+    $pdfcontent = '';
     
-    // foreach ($files as $file) {
-    //     if ($file->get_mimetype() === 'application/pdf') {
-    //         // Extraer texto del PDF usando pdftotext si está disponible
-    //         $tempfile = $file->copy_content_to_temp();
+    foreach ($files as $file) {
+        if ($file->get_mimetype() === 'application/pdf') {
+            // Extraer texto del PDF usando pdftotext si está disponible
+            $tempfile = $file->copy_content_to_temp();
             
-    //         // Intentar extraer texto con pdftotext
-    //         if (shell_exec('which pdftotext')) {
-    //             $output = shell_exec("pdftotext " . escapeshellarg($tempfile) . " -");
-    //             if ($output) {
-    //                 $pdfcontent = $output;
-    //             }
-    //         }
+            // Intentar extraer texto con pdftotext
+            if (shell_exec('which pdftotext')) {
+                $output = shell_exec("pdftotext " . escapeshellarg($tempfile) . " -");
+                if ($output) {
+                    $pdfcontent = $output;
+                }
+            }
             
-    //         // Si no se pudo extraer, al menos informar que hay un PDF
-    //         if (empty($pdfcontent)) {
-    //             $pdfcontent = "El estudiante ha enviado un archivo PDF llamado: " . $file->get_filename();
-    //         }
+            // Si no se pudo extraer, al menos informar que hay un PDF
+            if (empty($pdfcontent)) {
+                $pdfcontent = "El estudiante ha enviado un archivo PDF llamado: " . $file->get_filename();
+            }
             
-    //         @unlink($tempfile);
-    //         break; // Solo procesamos el primer PDF
-    //     }
-    // }
+            @unlink($tempfile);
+            break; // Solo procesamos el primer PDF
+        }
+    }
     
     if (empty($pdfcontent) && empty($files)) {
         echo json_encode([

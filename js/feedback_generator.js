@@ -52,6 +52,17 @@
                         status.innerHTML = '<span style="color: green;"><i class="fa fa-check"></i> ¡Feedback generado exitosamente!</span>';
                         textarea.value = response.feedback;
                         console.log('✅ Feedback generado correctamente');
+                        
+                        // DEBUG: Mostrar información del PDF extraído
+                        if (response.debug) {
+                            console.log('=== DEBUG PDFTOTEXT ===');
+                            console.log('pdftotext disponible:', response.debug.pdftotext_available);
+                            console.log('Longitud del contenido:', response.debug.content_length);
+                            console.log('Vista previa:', response.debug.content_preview);
+                            console.log('Archivos encontrados:', response.debug.files_found);
+                            console.log('Primer archivo:', response.debug.first_file);
+                            console.log('======================');
+                        }
                     } else {
                         status.innerHTML = '<span style="color: red;"><i class="fa fa-times"></i> Error: ' + response.error + '</span>';
                         textarea.value = '';
