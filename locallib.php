@@ -124,4 +124,77 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
         
         return true;
     }
+    /**
+     * Muestra el feedback al estudiante
+     * Este método se llama cuando el estudiante visualiza su calificación
+     */
+    public function view(stdClass $grade) {
+        global $DB;
+        
+        $assignid = $this->assignment->get_instance()->id;
+        $userid = $grade->userid;
+        
+        // Obtener el feedback guardado
+        $record = $DB->get_record('assignfeedback_aiprompt', [
+            'assignment' => $assignid,
+            'userid' => $userid
+        ]);
+        
+        if (!$record || empty($record->aifeedback)) {
+            return ''; // No hay feedback que mostrar
+        }
+        
+        // Formatear el feedback para mostrarlo al estudiante
+        $feedback = format_text($record->aifeedback, FORMAT_HTML);
+        
+        // Crear el HTML para mostrar
+        $html = '<div class="assignfeedback_aiprompt_feedback">';
+        $html .= '<div class="feedback-content" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff;">';
+        $html .= $feedback;
+        $html .= '</div>';
+        $html .= '</div>';
+        
+        return $html;
+    }
+    
+     /**
+     * Verifica si el feedback está vacío
+     * Este método determina si hay contenido que mostrar al estudiante
+     */
+    public function is_empty(stdClass $grade) {
+        global $DB;
+        
+        $assignid = $this->assignment->get_instance()->id;
+        $userid = $grade->userid;
+        
+        $record = $DB->get_record('assignfeedback_aiprompt', [
+            'assignment' => $assignid,
+            'userid' => $userid
+        ]);
+        
+        // Retorna true si está vacío, false si tiene contenido
+        return !$record || empty($record->aifeedback);
+    }
+    
+    /**
+     * Muestra un resumen del feedback (para la vista del profesor)
+     */
+    public function view_summary(stdClass $grade, & $showviewlink) {
+        $content = $this->view($grade);
+        
+        // Si hay contenido, no mostrar el enlace "ver más"
+        if (!empty($content)) {
+            $showviewlink = false;
+        }
+        
+        return $content;
+    }
+    
+    /**
+     * Para debugging: Verifica si hay errores en las consultas
+     */
+    public function can_view_feedback(stdClass $grade) {
+        // Permite ver el feedback si existe
+        return !$this->is_empty($grade);
+    }
 }
