@@ -1,36 +1,42 @@
 # assignfeedback_aiprompt
 
-Plugin de feedback para Moodle que permite a los profesores generar retroalimentación automática sobre las entregas de sus estudiantes utilizando inteligencia artificial a través de [Ollama](https://ollama.com/).
+Plugin de **feedback para tareas de Moodle** que genera retroalimentación automática sobre las entregas de los estudiantes utilizando inteligencia artificial local a través de [Ollama](https://ollama.com/).
 
 ---
 
 ## 📋 Descripción
 
-`assignfeedback_aiprompt` es un plugin de tipo **Assignment Feedback** para Moodle. Cuando un profesor califica una tarea, puede hacer clic en un botón para que la IA analice el documento PDF entregado por el estudiante y genere un feedback personalizado basado en un prompt previamente configurado. El profesor puede revisar, editar y guardar ese feedback antes de que el estudiante lo vea.
+`assignfeedback_aiprompt` es un plugin de tipo **Assignment Feedback** para Moodle. Cuando un profesor abre la pantalla de calificación de un estudiante, puede hacer clic en un botón para que la IA analice el PDF entregado y genere un feedback personalizado, basado en un prompt que el profesor configuró previamente en la tarea.
 
-### Características principales
+El profesor puede **revisar, editar y guardar** el feedback antes de que el estudiante lo vea.
 
-- Generación automática de feedback usando modelos de lenguaje locales (Ollama).
-- Extracción de texto desde archivos PDF enviados por los estudiantes.
-- El profesor puede editar el feedback generado antes de guardarlo.
-- El feedback se almacena en la base de datos de Moodle y se muestra al estudiante en su calificación.
-- Configuración flexible: URL del servidor, modelo de IA y timeout ajustables desde el panel de administración.
+> ⚠️ **Dependencia obligatoria:** Este plugin requiere que el plugin [`local_prompt_tarea`](../prompt_tarea/) esté instalado y que el profesor haya configurado un prompt en la tarea.
+
+---
+
+## ✨ Características principales
+
+- 🤖 Generación automática de feedback con modelos de lenguaje local (Ollama / DeepSeek, Llama, etc.).
+- 📄 Extracción de texto desde archivos PDF de los estudiantes (`pdftotext`).
+- ✏️ El profesor puede editar el feedback antes de guardarlo.
+- 💾 El feedback se persiste en la base de datos y se muestra al estudiante en su calificación.
+- ⚙️ Configuración flexible: URL del servidor Ollama, modelo de IA y timeout ajustables desde el panel de administración.
 
 ---
 
 ## 🗂️ Estructura del proyecto
 
 ```
-assignfeedback_aiprompt/
-├── ajax_generate_feedback.php   # Endpoint AJAX para generar el feedback
+mod/assign/feedback/aiprompt/
+├── ajax_generate_feedback.php   # Endpoint AJAX para generar el feedback con IA
 ├── locallib.php                 # Clase principal del plugin (formulario, guardar, mostrar)
 ├── settings.php                 # Configuración del plugin en el panel de administración
 ├── version.php                  # Metadatos del plugin (versión, dependencias)
 ├── classes/
 │   └── ollama_client.php        # Cliente HTTP para comunicarse con la API de Ollama
 ├── db/
-│   ├── install.xml              # Esquema de base de datos (tabla assignfeedback_aiprompt)
-│   └── upgrade.php              # Script de actualización de base de datos
+│   ├── install.xml              # Esquema de base de datos
+│   └── upgrade.php              # Script de actualización de BD
 ├── js/
 │   └── feedback_generator.js    # Lógica del botón y petición AJAX en el frontend
 └── lang/
@@ -42,14 +48,14 @@ assignfeedback_aiprompt/
 
 ## ✅ Requisitos
 
-| Requisito | Versión mínima |
-|-----------|---------------|
-| Moodle    | 5.0 (build 2024042200) |
-| PHP       | 7.4+ |
-| Ollama    | Cualquier versión con API `/api/generate` |
-| pdftotext | Recomendado para extraer texto de PDFs (`poppler-utils`) |
-
-> **Nota:** El plugin depende del módulo estándar `mod_assign` (actividades de tipo Tarea).
+| Requisito | Versión / Detalle |
+|-----------|-------------------|
+| Moodle | 5.0 (build `2024042200`) |
+| PHP | 7.4+ |
+| `mod_assign` | 2024042200 (incluido en Moodle 5.0) |
+| Ollama | Cualquier versión con API `/api/generate` |
+| `pdftotext` | Recomendado — paquete `poppler-utils` |
+| `local_prompt_tarea` | Debe estar instalado y configurado |
 
 ---
 
@@ -57,49 +63,56 @@ assignfeedback_aiprompt/
 
 ### 1. Copiar el plugin
 
-Coloca la carpeta del plugin en el directorio de feedback de tareas de Moodle:
-
-```
+```bash
+# Ruta de instalación dentro de Moodle
 {moodle_root}/mod/assign/feedback/aiprompt/
 ```
 
-### 2. Instalar en Moodle
+### 2. Instalar `local_prompt_tarea` (dependencia)
 
-Accede a tu sitio Moodle como administrador y navega a:
+```bash
+{moodle_root}/local/prompt_tarea/
+```
+
+### 3. Activar en Moodle
+
+Como administrador, ve a:
 
 ```
 Administración del sitio → Notificaciones
 ```
 
-Moodle detectará el plugin nuevo y ejecutará el script de instalación de la base de datos automáticamente.
+Moodle detectará ambos plugins y ejecutará los scripts de base de datos.
 
-### 3. Instalar Ollama (si no está instalado)
+### 4. Instalar Ollama
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
-Descarga un modelo (por ejemplo, DeepSeek R1):
+Descarga un modelo de lenguaje:
 
 ```bash
 ollama pull deepseek-r1:7b
+# Otras opciones: llama3, mistral, phi3, gemma2
 ```
 
-Verifica que el servidor esté corriendo:
+Verifica que el servidor esté activo:
 
 ```bash
 ollama serve
+# El servidor escucha en http://localhost:11434 por defecto
 ```
 
-### 4. (Opcional) Instalar pdftotext
+### 5. (Recomendado) Instalar `pdftotext`
 
-Para extraer el texto de los archivos PDF de los estudiantes:
+Necesario para extraer el texto de los PDFs entregados por los estudiantes:
 
 ```bash
 # Debian / Ubuntu
 sudo apt install poppler-utils
 
-# CentOS / RHEL
+# CentOS / RHEL / Fedora
 sudo yum install poppler-utils
 ```
 
@@ -110,57 +123,48 @@ sudo yum install poppler-utils
 Una vez instalado, configura el plugin desde:
 
 ```
-Administración del sitio → Plugins → Feedback de tarea → Feedback con IA
+Administración del sitio → Plugins → Feedback de tarea → Feedback con IA (AI Prompt)
 ```
 
 | Parámetro | Descripción | Valor por defecto |
 |-----------|-------------|-------------------|
 | **URL de Ollama** | Dirección del servidor Ollama | `http://localhost:11434` |
 | **Modelo de Ollama** | Nombre del modelo a usar | `deepseek-r1:7b` |
-| **Timeout (segundos)** | Tiempo máximo de espera para la respuesta | `120` |
-| **Habilitado por defecto** | Si el plugin está activo en tareas nuevas | Sí |
-
----
-
-## 📝 Dependencia: Plugin `local_prompt_tarea`
-
-Este plugin **requiere** que exista un plugin local llamado `local_prompt_tarea` que almacene los prompts configurados para cada tarea en la tabla `local_prompt_tarea`.
-
-Cada registro de esa tabla debe contener al menos:
-- `assignid` — ID de la tarea de Moodle.
-- `prompt` — Texto del prompt que se enviará a la IA.
-
-Sin un prompt configurado para la tarea, el plugin mostrará una advertencia y no permitirá generar feedback.
+| **Timeout (segundos)** | Tiempo máximo de espera para la respuesta de la IA | `120` |
+| **Habilitado por defecto** | Si el plugin estará activo en nuevas tareas | `Sí` |
 
 ---
 
 ## 🔄 Flujo de uso
 
 ```
-Profesor abre la calificación de un estudiante
-        │
-        ▼
-Se muestra el formulario con el botón "Evaluar práctica con IA"
-        │
-        ▼
-Profesor hace clic en el botón
-        │
-        ▼
-AJAX → ajax_generate_feedback.php
-  1. Verifica permisos (mod/assign:grade)
-  2. Obtiene el prompt de local_prompt_tarea
-  3. Extrae texto del PDF del estudiante (pdftotext)
-  4. Envía prompt + texto a Ollama
-  5. Guarda el feedback en assignfeedback_aiprompt
-        │
-        ▼
-El feedback aparece en el textarea (editable)
-        │
-        ▼
-El profesor revisa, edita y guarda la calificación
-        │
-        ▼
-El estudiante ve el feedback en su calificación
+1. El profesor configura un prompt en la tarea (via local_prompt_tarea)
+         │
+         ▼
+2. El estudiante entrega un archivo PDF en la tarea
+         │
+         ▼
+3. El profesor abre la pantalla de calificación del estudiante
+         │
+         ▼
+4. El formulario muestra el botón "Evaluar práctica con IA"
+         │
+         ▼
+5. El profesor hace clic → Petición AJAX a ajax_generate_feedback.php
+   ├─ Verifica permisos (mod/assign:grade)
+   ├─ Lee el prompt desde local_prompt_tarea
+   ├─ Extrae el texto del PDF con pdftotext
+   ├─ Envía prompt + texto a Ollama → recibe feedback
+   └─ Guarda el feedback en assignfeedback_aiprompt (BD)
+         │
+         ▼
+6. El feedback aparece en el textarea (editable por el profesor)
+         │
+         ▼
+7. El profesor revisa, edita si es necesario y guarda la calificación
+         │
+         ▼
+8. El estudiante ve el feedback en su calificación
 ```
 
 ---
@@ -171,13 +175,15 @@ El estudiante ve el feedback en su calificación
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `id` | INT | Clave primaria |
-| `assignment` | INT | ID de la tarea (`assign.id`) |
-| `userid` | INT | ID del estudiante |
-| `aifeedback` | TEXT | Texto del feedback generado por IA |
+| `id` | INT (PK) | Clave primaria autoincremental |
+| `assignment` | INT (FK) | ID de la tarea (`assign.id`) |
+| `userid` | INT | ID del estudiante evaluado |
+| `aifeedback` | TEXT | Texto del feedback generado por la IA |
 | `isedited` | TINYINT | `1` si el profesor editó el feedback, `0` si no |
-| `timecreated` | INT | Timestamp de creación |
-| `timemodified` | INT | Timestamp de última modificación |
+| `timecreated` | INT | Timestamp Unix de creación |
+| `timemodified` | INT | Timestamp Unix de última modificación |
+
+> Un par `(assignment, userid)` identifica un feedback único por alumno por tarea.
 
 ---
 
@@ -185,70 +191,104 @@ El estudiante ve el feedback en su calificación
 
 ### `locallib.php` — Clase `assign_feedback_aiprompt`
 
-Hereda de `assign_feedback_plugin` y implementa los métodos que Moodle invoca en el ciclo de vida del feedback:
+Extiende `assign_feedback_plugin` e implementa el ciclo de vida del feedback en Moodle:
 
 | Método | Descripción |
 |--------|-------------|
-| `get_name()` | Devuelve el nombre del plugin |
+| `get_name()` | Devuelve el nombre localizado del plugin |
 | `get_form_elements()` | Renderiza el botón y el textarea en el formulario de calificación |
-| `save()` | Guarda el feedback en la base de datos |
-| `view()` | Muestra el feedback al estudiante |
-| `is_empty()` | Indica si hay feedback que mostrar |
-| `view_summary()` | Muestra un resumen del feedback |
+| `save()` | Persiste el feedback (generado o editado) en la base de datos |
+| `view()` | Renderiza el feedback formateado para el estudiante |
+| `is_empty()` | Indica si hay feedback guardado para mostrar al estudiante |
+| `view_summary()` | Muestra un resumen del feedback en la lista de calificaciones |
 
 ### `classes/ollama_client.php` — Clase `ollama_client`
 
-Cliente HTTP que se comunica con la API REST de Ollama:
+Cliente HTTP que se comunica con la API REST de Ollama vía cURL:
 
-| Método | Descripción |
-|--------|-------------|
-| `generate_feedback($prompt, $context)` | Envía el prompt y el contexto a Ollama y retorna la respuesta |
-| `test_connection()` | Verifica si el servidor Ollama está disponible |
+| Método | Parámetros | Descripción |
+|--------|------------|-------------|
+| `generate_feedback($prompt, $context)` | `string`, `string` | Envía el prompt más el texto del PDF a Ollama y retorna la respuesta generada |
+| `test_connection()` | — | Verifica si el servidor Ollama está disponible (GET `/api/tags`) |
+
+La configuración (URL, modelo, timeout) se lee automáticamente desde los ajustes del plugin con `get_config()`.
+
+### `ajax_generate_feedback.php`
+
+Endpoint AJAX que orquesta todo el proceso de generación:
+
+1. Autentica la sesión Moodle y verifica el permiso `mod/assign:grade`.
+2. Lee el prompt desde `local_prompt_tarea`.
+3. Obtiene la entrega del estudiante y extrae el texto del PDF.
+4. Llama a `ollama_client::generate_feedback()`.
+5. Guarda el resultado en `assignfeedback_aiprompt` (crea o actualiza el registro).
+6. Retorna JSON: `{ success: true, feedback: "..." }` o `{ success: false, error: "..." }`.
 
 ### `js/feedback_generator.js`
 
 Script de frontend que:
+
 1. Escucha el clic en el botón `#id_generate_ai_feedback`.
-2. Deshabilita el botón y muestra un indicador de carga.
-3. Realiza una petición `POST` vía `XMLHttpRequest` al endpoint AJAX.
-4. Inserta el feedback generado en el textarea o muestra el error correspondiente.
+2. Deshabilita el botón y muestra un indicador de carga en `#ai_feedback_status`.
+3. Realiza una petición `POST` mediante `XMLHttpRequest` al endpoint AJAX.
+4. Inserta el feedback en el textarea `#id_assignfeedbackaiprompt`, o muestra el error.
 
 ---
 
 ## 🔐 Seguridad y permisos
 
-- El endpoint AJAX verifica que el usuario tenga la capacidad **`mod/assign:grade`** sobre el contexto del módulo antes de generar feedback.
-- Se valida la sesión de Moodle (`sesskey`) en cada petición AJAX.
-- Solo los administradores pueden cambiar la configuración del plugin.
+| Control | Detalle |
+|---------|---------|
+| Autenticación | Se requiere sesión Moodle activa (`require_login()`) |
+| Autorización | El usuario debe tener la capacidad `mod/assign:grade` en el contexto del módulo |
+| Administración | Solo los administradores pueden modificar los ajustes del plugin |
 
 ---
 
-## 🛠️ Desarrollo y contribución
+## 🛠️ Desarrollo y extensión
 
-### Añadir soporte para otro tipo de archivos
+### Añadir soporte para otros formatos de archivo
 
-Actualmente el plugin solo procesa el primer archivo PDF de la entrega. Para añadir soporte a otros formatos (`.docx`, `.txt`, etc.), modifica el bucle de archivos en `ajax_generate_feedback.php`.
+Actualmente el plugin procesa el primer archivo PDF de la entrega. Para añadir soporte a `.docx`, `.txt`, etc., modifica el bucle de procesamiento de archivos en `ajax_generate_feedback.php` (líneas ~54–75).
 
 ### Cambiar el modelo de IA
 
-Desde el panel de administración puedes cambiar el modelo en cualquier momento. Asegúrate de haber descargado el modelo con `ollama pull <nombre-del-modelo>` antes de configurarlo.
+Desde el panel de administración puedes cambiar el modelo en cualquier momento. Antes de usarlo, descárgalo:
+
+```bash
+ollama pull llama3:8b
+ollama pull mistral:7b
+ollama pull phi3:mini
+```
 
 ### Añadir idiomas
 
-Crea el archivo de idioma correspondiente en:
+Crea el archivo de traducciones en:
 
 ```
 lang/<codigo_idioma>/assignfeedback_aiprompt.php
 ```
 
+Ejemplo para español (`es`):
+
+```
+lang/es/assignfeedback_aiprompt.php
+```
+
 ---
 
-## 📄 Licencia
+## 📄 Versión
 
-Este plugin está basado en la arquitectura estándar de plugins de Moodle. Consulta [https://moodle.org/plugins](https://moodle.org/plugins) para más información sobre el desarrollo de plugins.
+| Atributo | Valor |
+|----------|-------|
+| Componente | `assignfeedback_aiprompt` |
+| Versión | `2025011107` |
+| Release | `1.0` |
+| Madurez | Estable (`MATURITY_STABLE`) |
+| Requiere | Moodle 5.0+ / `mod_assign` |
 
 ---
 
 ## 👤 Autor
 
-Desarrollado como parte de un proyecto académico para la automatización del feedback en tareas de Moodle mediante inteligencia artificial generativa local.
+Desarrollado como parte de un proyecto académico para la **automatización del feedback en tareas de Moodle** mediante inteligencia artificial generativa local, eliminando la dependencia de servicios externos en la nube.
