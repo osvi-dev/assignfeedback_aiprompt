@@ -177,7 +177,7 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
     }
     
     /**
-     * Muestra un resumen del feedback (para la vista del profesor)
+     * Muestra un resumen del feedback 
      */
     public function view_summary(stdClass $grade, & $showviewlink) {
         $content = $this->view($grade);
@@ -190,11 +190,4 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
         return $content;
     }
     
-    /**
-     * Para debugging: Verifica si hay errores en las consultas
-     */
-    public function can_view_feedback(stdClass $grade) {
-        // Permite ver el feedback si existe
-        return !$this->is_empty($grade);
-    }
 }
