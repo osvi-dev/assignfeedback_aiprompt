@@ -28,8 +28,8 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
         // Obtener el prompt de la tarea
         $promptdata = $DB->get_record('local_prompt_tarea', ["assignid" => $assignid]);
         
-        if (!$promptdata) {
-            // Si no hay prompt configurado, mostrar mensaje de advertencia
+        if (!$promptdata || empty($promptdata->prompt)) {
+            // Si no hay prompt del profesor configurado, mostrar mensaje de advertencia
             $mform->addElement('html', '<div class="alert alert-warning">' . 
                 get_string('no_prompt_found', 'assignfeedback_aiprompt') . 
                 '</div>');
@@ -124,35 +124,87 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
         
         return true;
     }
+
     /**
      * Muestra el feedback al estudiante
-     * Este método se llama cuando el estudiante visualiza su calificación
+     * Este método se llama cuando el estudiante visualiza su calificación.
+     * Ahora incluye un botón para que el estudiante genere retroalimentación con IA
+     * usando el prompt_estudiante definido por el profesor.
      */
     public function view(stdClass $grade) {
-        global $DB;
+        global $DB, $USER, $PAGE;
         
         $assignid = $this->assignment->get_instance()->id;
         $userid = $grade->userid;
         
-        // Obtener el feedback guardado
+        $html = '';
+        
+        // --- Sección 1: Feedback del profesor (generado/editado por el profesor) ---
         $record = $DB->get_record('assignfeedback_aiprompt', [
             'assignment' => $assignid,
             'userid' => $userid
         ]);
         
-        if (!$record || empty($record->aifeedback)) {
-            return ''; // No hay feedback que mostrar
+        if ($record && !empty($record->aifeedback)) {
+            $feedback = format_text($record->aifeedback, FORMAT_HTML);
+            
+            $html .= '<div class="assignfeedback_aiprompt_feedback">';
+            $html .= '<div class="feedback-content" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff;">';
+            $html .= $feedback;
+            $html .= '</div>';
+            $html .= '</div>';
         }
         
-        // Formatear el feedback para mostrarlo al estudiante
-        $feedback = format_text($record->aifeedback, FORMAT_HTML);
-        
-        // Crear el HTML para mostrar
-        $html = '<div class="assignfeedback_aiprompt_feedback">';
-        $html .= '<div class="feedback-content" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff;">';
-        $html .= $feedback;
-        $html .= '</div>';
-        $html .= '</div>';
+        // --- Sección 2: Botón de retroalimentación para el estudiante ---
+        // Solo mostrar si el usuario actual ES el estudiante dueño de esta entrega
+        if ($USER->id == $userid) {
+            // Verificar si existe el prompt_estudiante
+            $promptdata = $DB->get_record('local_prompt_tarea', ['assignid' => $assignid]);
+            
+            // Cargar feedback del estudiante ya generado previamente
+            $studentfeedback = '';
+            $studentrecord = $DB->get_record('assignfeedback_aiprompt_stu', [
+                'assignment' => $assignid,
+                'userid' => $userid
+            ]);
+            if ($studentrecord && !empty($studentrecord->studentfeedback)) {
+                $studentfeedback = $studentrecord->studentfeedback;
+            }
+            
+            $html .= '<div class="assignfeedback_student_section" style="margin-top: 20px; padding: 15px; border: 1px solid #dee2e6; border-radius: 8px; background-color: #fff;">';
+            $html .= '<h5 style="margin-bottom: 10px; color: #495057;">' . get_string('student_feedback_title', 'assignfeedback_aiprompt') . '</h5>';
+            
+            if (!$promptdata || empty($promptdata->prompt_estudiante)) {
+                // No hay prompt del estudiante configurado — mostrar advertencia
+                $html .= '<div class="alert alert-warning" style="margin-bottom: 0;">';
+                $html .= '<i class="fa fa-exclamation-triangle"></i> ';
+                $html .= get_string('no_student_prompt_assigned', 'assignfeedback_aiprompt');
+                $html .= '</div>';
+            } else {
+                // Hay prompt — mostrar el botón
+                $html .= '<button type="button" class="btn btn-success" id="id_generate_student_ai_feedback" '
+                       . 'data-assignid="' . $assignid . '" '
+                       . 'data-userid="' . $userid . '">'
+                       . '<i class="fa fa-robot"></i> '
+                       . get_string('generate_student_feedback', 'assignfeedback_aiprompt')
+                       . '</button>';
+                $html .= ' <span id="student_ai_feedback_status" style="margin-left: 10px;"></span>';
+            }
+            
+            // Contenedor para mostrar el resultado
+            $html .= '<div id="student_ai_feedback_result" style="margin-top: 15px;">';
+            if (!empty($studentfeedback)) {
+                $html .= '<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745; white-space: pre-wrap;">';
+                $html .= format_text($studentfeedback, FORMAT_HTML);
+                $html .= '</div>';
+            }
+            $html .= '</div>';
+            
+            $html .= '</div>';
+            
+            // Cargar JavaScript para el botón del estudiante
+            $PAGE->requires->js('/mod/assign/feedback/aiprompt/js/student_feedback_generator.js');
+        }
         
         return $html;
     }
@@ -162,18 +214,28 @@ class assign_feedback_aiprompt extends assign_feedback_plugin {
      * Este método determina si hay contenido que mostrar al estudiante
      */
     public function is_empty(stdClass $grade) {
-        global $DB;
+        global $DB, $USER;
         
         $assignid = $this->assignment->get_instance()->id;
         $userid = $grade->userid;
         
+        // Si hay feedback del profesor, no está vacío
         $record = $DB->get_record('assignfeedback_aiprompt', [
             'assignment' => $assignid,
             'userid' => $userid
         ]);
         
-        // Retorna true si está vacío, false si tiene contenido
-        return !$record || empty($record->aifeedback);
+        if ($record && !empty($record->aifeedback)) {
+            return false;
+        }
+        
+        // Si el usuario es el estudiante, siempre mostrar la sección
+        // (para que vea el botón o el mensaje de advertencia)
+        if ($USER->id == $userid) {
+            return false;
+        }
+        
+        return true;
     }
     
     /**

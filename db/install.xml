@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/assign/feedback/aiprompt/db" VERSION="20250111" COMMENT="XMLDB file for assignfeedback_aiprompt"
+<XMLDB PATH="mod/assign/feedback/aiprompt/db" VERSION="20250602" COMMENT="XMLDB file for assignfeedback_aiprompt"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="assignfeedback_aiprompt" COMMENT="Almacena feedback generado por IA">
+    <TABLE NAME="assignfeedback_aiprompt" COMMENT="Almacena feedback generado por IA (profesor)">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID de la tarea"/>
@@ -20,6 +20,23 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="assignment_idx" UNIQUE="false" FIELDS="assignment"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="assignfeedback_aiprompt_stu" COMMENT="Almacena feedback generado por IA para el estudiante">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID de la tarea"/>
+        <FIELD NAME="studentfeedback" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Feedback generado por IA para el estudiante"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="ID del estudiante"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="assignment" TYPE="foreign" FIELDS="assignment" REFTABLE="assign" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="assignment_user_idx" UNIQUE="false" FIELDS="assignment, userid"/>
       </INDEXES>
     </TABLE>
   </TABLES>

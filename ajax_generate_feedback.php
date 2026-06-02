@@ -9,28 +9,47 @@ require_login();
 
 $assignid = required_param('assignid', PARAM_INT);
 $userid = required_param('userid', PARAM_INT);
+$role = optional_param('role', 'teacher', PARAM_ALPHA); // 'teacher' o 'student'
 
 header('Content-Type: application/json');
 
 try {
     // Obtener el prompt de la base de datos
     $promptdata = $DB->get_record('local_prompt_tarea', ['assignid' => $assignid]);
-    
-    if (!$promptdata || empty($promptdata->prompt)) {
-        echo json_encode([
-            'success' => false,
-            'error' => get_string('no_prompt_found', 'assignfeedback_aiprompt')
-        ]);
-        exit;
+
+    // Determinar qué prompt usar según el rol
+    if ($role === 'student') {
+        // El estudiante usa el prompt_estudiante
+        if (!$promptdata || empty($promptdata->prompt_estudiante)) {
+            echo json_encode([
+                'success' => false,
+                'error' => get_string('no_student_prompt_assigned', 'assignfeedback_aiprompt')
+            ]);
+            exit;
+        }
+        $prompt = $promptdata->prompt_estudiante;
+    } else {
+        // El profesor usa el prompt normal
+        if (!$promptdata || empty($promptdata->prompt)) {
+            echo json_encode([
+                'success' => false,
+                'error' => get_string('no_prompt_found', 'assignfeedback_aiprompt')
+            ]);
+            exit;
+        }
+        $prompt = $promptdata->prompt;
     }
-    
-    $prompt = $promptdata->prompt;
     
     // Obtener la tarea y el contexto del estudiante
     list($course, $cm) = get_course_and_cm_from_instance($assignid, 'assign');
     $context = context_module::instance($cm->id);
     
-    require_capability('mod/assign:grade', $context);
+    // Verificar capacidades según el rol
+    if ($role === 'student') {
+        require_capability('mod/assign:submit', $context);
+    } else {
+        require_capability('mod/assign:grade', $context);
+    }
     
     $assign = new assign($context, $cm, $course);
     
@@ -96,26 +115,48 @@ try {
         exit;
     }
     
-    // Guardar en base de datos (opcional, puedes hacerlo después cuando el profesor guarde)
-    $record = new stdClass();
-    $record->assignment = $assignid;
-    $record->aifeedback = $feedback;
-    $record->userid = $userid;
-    $record->isedited = 0;
-    $record->timecreated = time();
-    $record->timemodified = time();
-    
-    // Verificar si ya existe un registro
-    $existing = $DB->get_record('assignfeedback_aiprompt', [
-        'assignment' => $assignid,
-        'userid' => $userid
-    ]);
+    // Guardar en base de datos
+    if ($role === 'student') {
+        // Guardar feedback del estudiante en una tabla o campo separado
+        $record = new stdClass();
+        $record->assignment = $assignid;
+        $record->studentfeedback = $feedback;
+        $record->userid = $userid;
+        $record->timecreated = time();
+        $record->timemodified = time();
 
-    if ($existing) {
-        $record->id = $existing->id;
-        $DB->update_record('assignfeedback_aiprompt', $record);
+        $existing = $DB->get_record('assignfeedback_aiprompt_stu', [
+            'assignment' => $assignid,
+            'userid' => $userid
+        ]);
+
+        if ($existing) {
+            $record->id = $existing->id;
+            $DB->update_record('assignfeedback_aiprompt_stu', $record);
+        } else {
+            $DB->insert_record('assignfeedback_aiprompt_stu', $record);
+        }
     } else {
-        $DB->insert_record('assignfeedback_aiprompt', $record);
+        // Guardar feedback del profesor (comportamiento original)
+        $record = new stdClass();
+        $record->assignment = $assignid;
+        $record->aifeedback = $feedback;
+        $record->userid = $userid;
+        $record->isedited = 0;
+        $record->timecreated = time();
+        $record->timemodified = time();
+
+        $existing = $DB->get_record('assignfeedback_aiprompt', [
+            'assignment' => $assignid,
+            'userid' => $userid
+        ]);
+
+        if ($existing) {
+            $record->id = $existing->id;
+            $DB->update_record('assignfeedback_aiprompt', $record);
+        } else {
+            $DB->insert_record('assignfeedback_aiprompt', $record);
+        }
     }
     
     echo json_encode([
