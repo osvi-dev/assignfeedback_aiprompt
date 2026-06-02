@@ -28,5 +28,11 @@ function xmldb_assignfeedback_aiprompt_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025060200, 'assignfeedback', 'aiprompt');
     }
     
+    if ($oldversion < 2025060201) {
+        // Nueva versión: se registró el hook para inyectar el botón del estudiante
+        // en mod/assign/view.php. No se requieren cambios de BD.
+        upgrade_plugin_savepoint(true, 2025060201, 'assignfeedback', 'aiprompt');
+    }
+    
     return true;
 }
